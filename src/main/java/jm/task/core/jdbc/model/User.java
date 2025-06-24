@@ -9,7 +9,6 @@ public class User {
     @Id
     private Long id;
 
-    @Column
     private String name;
 
     @Column
@@ -58,5 +57,15 @@ public class User {
 
     public void setAge(Byte age) {
         this.age = age;
+    }
+
+    @Override
+    public String toString() {
+        return "Пользователь {" +
+                "id=" + id +
+                ", Имя ='" + name + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", Возраст =" + age +
+                '}';
     }
 }
