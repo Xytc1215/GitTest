@@ -1,69 +1,81 @@
 package jm.task.core.jdbc.util;
 
+import jm.task.core.jdbc.model.User;
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.service.ServiceRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+/**
+ * Утилитный класс для настройки и предоставления
+ * - JDBC Connection
+ * - Hibernate SessionFactory
+ */
 public class Util {
-    private static final String URL = "jdbc:mysql://localhost:3306/gittest2";
+
+    private static final Logger logger = LoggerFactory.getLogger(Util.class);
+
+    /** Параметры подключения к базе
+     * ( JDBC и Hibernate)
+     */
+    private static final String URL = "jdbc:mysql://localhost:3306/gittest2?useSSL=false&allowPublicKeyRetrieval=true";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "springcourse";
 
-// JDBC
-    public static Connection getConnection() {
-        Connection connection = null;
-        try {
-            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-            System.out.println("Успешное подключение к базе");
-        } catch (SQLException e) {
-            System.out.println("Ошибка при подключении к базе");
-            e.printStackTrace();
-        }
-        return connection;
-    }
-
-    // Hibernate
     private static SessionFactory sessionFactory;
 
+    /**
+     * Получение JDBC Connection для работы через JDBC.
+     */
+    public static Connection getConnection() {
+        try {
+            return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка при подключении к базе данных", e);
+        }
+    }
 
+    /**
+     * Получает синглтон Hibernate SessionFactory.
+     * Если объект ещё не создан — настраивает его.
+     */
     public static SessionFactory getSessionFactory() {
         if (sessionFactory == null) {
             try {
-                StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
-                        .applySettings(getHibernateProperties())
-                        .build();
+                Configuration configuration = new Configuration();
 
-                sessionFactory = new MetadataSources(registry)
-                        .addAnnotatedClass(jm.task.core.jdbc.model.User.class)
-                        .buildMetadata()
-                        .buildSessionFactory();
+                Properties settings = new Properties();
+                settings.put("hibernate.connection.driver_class", "com.mysql.cj.jdbc.Driver");
+                settings.put("hibernate.connection.url", URL);
+                settings.put("hibernate.connection.username", USERNAME);
+                settings.put("hibernate.connection.password", PASSWORD);
+                settings.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
+                settings.put("hibernate.hbm2ddl.auto", "none");
+                settings.put("hibernate.show_sql", "true");
+
+                configuration.setProperties(settings);
+
+                configuration.addAnnotatedClass(User.class);
+
+                ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+                        .applySettings(configuration.getProperties()).build();
+
+                sessionFactory = configuration.buildSessionFactory(serviceRegistry);
+
+                logger.info("Hibernate SessionFactory создан успешно");
 
             } catch (Exception e) {
-                e.printStackTrace();
-                if (sessionFactory != null) {
-                    sessionFactory.close();
-                }
+                logger.error("Ошибка при создании SessionFactory", e);
+                throw new RuntimeException("Ошибка при создании SessionFactory", e);
             }
         }
         return sessionFactory;
-    }
-
-    // Настройки Hibernate в Properties
-    private static Properties getHibernateProperties() {
-        Properties properties = new Properties();
-        properties.put("hibernate.connection.url", URL);
-        properties.put("hibernate.connection.username", USERNAME);
-        properties.put("hibernate.connection.password", PASSWORD);
-        properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
-        properties.put("hibernate.show_sql", "true");
-        properties.put("hibernate.format_sql", "true");
-        properties.put("hibernate.hbm2ddl.auto", "update"); // автоматически обновляет структуру таблиц
-        return properties;
     }
 }

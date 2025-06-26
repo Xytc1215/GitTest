@@ -2,6 +2,9 @@ package jm.task.core.jdbc.model;
 
 import javax.persistence.*;
 
+/**
+ * JPA-сущность User с полями id, name, lastName, age.
+ */
 
 @Entity
 @Table(name = "user")
