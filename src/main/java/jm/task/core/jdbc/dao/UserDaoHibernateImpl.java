@@ -24,19 +24,11 @@ public class UserDaoHibernateImpl implements UserDao {
     public UserDaoHibernateImpl() {
     }
 
-    /**
-     * Вспомогательный функциональный интерфейс
-     * для операций внутри транзакции.
-     */
     @FunctionalInterface
     private interface TransactionOperation<T> {
         T execute(Session session);
     }
 
-    /**
-     * Универсальная обёртка для выполнения Hibernate-операций
-     * с обработкой транзакций и логированием.
-     */
     private <T> T runInTransaction(TransactionOperation<T> operation) {
         Transaction transaction = null;
         T result = null;
@@ -50,14 +42,11 @@ public class UserDaoHibernateImpl implements UserDao {
             if (transaction != null && transaction.getStatus().canRollback()) {
                 transaction.rollback();
             }
-            logger.error("Ошибка при выполнении транзакции", e);
+            logger.error("Error while executing transaction", e);
         }
         return result;
     }
 
-    /**
-     * Создаёт таблицу пользователей в БД, если она ещё не существует.
-     */
     @Override
     public void createUsersTable() {
         runInTransaction(session -> {
@@ -75,33 +64,24 @@ public class UserDaoHibernateImpl implements UserDao {
         });
     }
 
-    /**
-     * Удаляет таблицу пользователей, если она существует.
-     */
     @Override
     public void dropUsersTable() {
         runInTransaction(session -> {
-            session.createSQLQuery("DROP TABLE IF EXISTS users").executeUpdate(); // выполняем сырой SQL
+            session.createSQLQuery("DROP TABLE IF EXISTS users").executeUpdate();
             logger.info("Таблица 'users' удалена (если существовала)");
             return null;
         });
     }
 
-    /**
-     * Добавляет нового пользователя в таблицу.
-     */
     @Override
     public void saveUser(String name, String lastName, byte age) {
         runInTransaction(session -> {
             session.save(new User(name, lastName, age));
-            logger.info("Пользователь с именем {} добавлен в базу", name);
+            logger.info("Пользователь с именем '{}' добавлен в базу", name);
             return null;
         });
     }
 
-    /**
-     * Удаляет пользователя по его ID.
-     */
     @Override
     public void removeUserById(long id) {
         runInTransaction(session -> {
@@ -116,9 +96,6 @@ public class UserDaoHibernateImpl implements UserDao {
         });
     }
 
-    /**
-     * Получает всех пользователей из таблицы.
-     */
     @Override
     public List<User> getAllUsers() {
         return runInTransaction(session -> {
@@ -128,9 +105,6 @@ public class UserDaoHibernateImpl implements UserDao {
         });
     }
 
-    /**
-     * Удаляет все записи из таблицы пользователей.
-     */
     @Override
     public void cleanUsersTable() {
         runInTransaction(session -> {

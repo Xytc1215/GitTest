@@ -1,15 +1,19 @@
 package jm.task.core.jdbc.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import javax.persistence.*;
 
 /**
  * Сущность User, для хранения информации о пользователях.
  */
-
-// Прикрути ломбок. В классе должны остаться только поля.
 @Entity
 @Table(name = "user")
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,55 +27,24 @@ public class User {
     @Column
     private Byte age;
 
-    public User() {
-
-    }
-
-    public User(String name, String lastName, Byte age) {
+    public User(String name, String lastName, byte age) {
         this.name = name;
         this.lastName = lastName;
         this.age = age;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public Byte getAge() {
-        return age;
-    }
-
-    public void setAge(Byte age) {
-        this.age = age;
-    }
-
-    @Override
-    public String toString() {
-        return "Пользователь {" +
-                "id=" + id +
-                ", Имя ='" + name + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", Возраст =" + age +
-                '}';
     }
 }
+
+
+
+
+
+// инфа для меня
+/**
+ * Добавил @Data — Lombok сгенерирует геттеры, сеттеры, toString(), equals(), hashCode().
+
+Добавил @NoArgsConstructor — создаст пустой конструктор (нужен для JPA).
+
+Добавил @AllArgsConstructor — создаст конструктор со всеми полями (кроме поля id — оно генерируется базой, но конструктор будет с ним).
+
+Удалил вручную написанные геттеры, сеттеры, конструкторы и toString().
+ */

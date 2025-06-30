@@ -8,7 +8,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jm.task.core.jdbc.util.Util.getConnection;
+import static jm.task.core.jdbc.util.Util.createJdbcConnection;
 
 /**
  * Что улучшилось:
@@ -19,7 +19,6 @@ import static jm.task.core.jdbc.util.Util.getConnection;
  *         - Все выражения вынесены в константы
  *
  */
-
 
 /**
  * Класс, для управления пользователями через JDBC.
@@ -55,7 +54,7 @@ public class UserDaoJDBCImpl implements UserDao {
 
     @Override
     public void saveUser(String name, String lastName, byte age) {
-        try (Connection connection = getConnection();
+        try (Connection connection = createJdbcConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USER_SQL)) {
 
             preparedStatement.setString(1, name);
@@ -72,7 +71,7 @@ public class UserDaoJDBCImpl implements UserDao {
 
     @Override
     public void removeUserById(long id) {
-        try (Connection connection = getConnection();
+        try (Connection connection = createJdbcConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(DELETE_USER_BY_ID_SQL)) {
 
             preparedStatement.setLong(1, id);
@@ -93,7 +92,7 @@ public class UserDaoJDBCImpl implements UserDao {
     public List<User> getAllUsers() {
         List<User> userList = new ArrayList<>();
 
-        try (Connection connection = getConnection();
+        try (Connection connection = createJdbcConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(SELECT_ALL_USERS_SQL)) {
 
@@ -124,7 +123,7 @@ public class UserDaoJDBCImpl implements UserDao {
      * Выполняет простой SQL-запрос без параметров.
      */
     private void executeStatement(String sql, String errorMessage) {
-        try (Connection connection = getConnection();
+        try (Connection connection = createJdbcConnection();
              Statement statement = connection.createStatement()) {
 
             statement.executeUpdate(sql);

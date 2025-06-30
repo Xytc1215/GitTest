@@ -2,6 +2,7 @@ package jm.task.core.jdbc.service;
 
 import jm.task.core.jdbc.dao.UserDao;
 import jm.task.core.jdbc.model.User;
+import lombok.RequiredArgsConstructor;
 
 
 import java.util.List;
@@ -10,26 +11,13 @@ import java.util.List;
  * Сервис для управления пользователями.
  * Выполняет бизнес-логику и делегирует работу с базой данных слою DAO.
  */
-
-// джава док перенеси в интерфейс
-
 /**
  * Реализация бизнес-логики для управления пользователями.
  * Делегирует работу с базой данных объекту DAO.
  */
-
-// для чего здесь две пусты строки?
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-
-
     private final UserDao userDao;
-
-    /**
-     * Конструктор с внедрением зависимости. // если в этом классе будешь добавлять ламбок, то можно убрать конструктор
-     */
-    public UserServiceImpl(UserDao userDao) {
-        this.userDao = userDao;
-    }
 
     /**
      * Создаёт таблицу пользователей.
