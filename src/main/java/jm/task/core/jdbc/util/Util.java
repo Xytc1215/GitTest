@@ -14,7 +14,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /**
- * Утилитный класс для настройки и предоставления
+ * Класс конфигурации
  * - JDBC Connection
  * - Hibernate SessionFactory
  */
@@ -22,9 +22,6 @@ public class Util {
 
     private static final Logger logger = LoggerFactory.getLogger(Util.class);
 
-    /** Параметры подключения к базе
-     * ( JDBC и Hibernate)
-     */
     private static final String URL = "jdbc:mysql://localhost:3306/gittest2?useSSL=false&allowPublicKeyRetrieval=true";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "springcourse";
@@ -36,12 +33,14 @@ public class Util {
      */
     public static Connection getConnection() {
         try {
-            return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            return DriverManager.getConnection(URL, USERNAME, PASSWORD);  // Можно статический импорт DriverManager.getConnection, чтобы здесь писать просто getConnection
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка при подключении к базе данных", e);
+            throw new RuntimeException("Ошибка при подключении к базе данных", e); // в следующих модулях лучше сделать кастомные эксепшены, и ими кидаться
         }
     }
 
+
+// Перепиши: Проверяет наличие SessionFactory, при отсутствии — инициализирует
     /**
      * Получает синглтон Hibernate SessionFactory.
      * Если объект ещё не создан — настраивает его.
@@ -61,19 +60,18 @@ public class Util {
                 settings.put("hibernate.show_sql", "true");
 
                 configuration.setProperties(settings);
-
                 configuration.addAnnotatedClass(User.class);
 
                 ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
-                        .applySettings(configuration.getProperties()).build();
+                        .applySettings(configuration.getProperties())
+                        .build();
 
                 sessionFactory = configuration.buildSessionFactory(serviceRegistry);
-
-                logger.info("Hibernate SessionFactory создан успешно");
+                logger.info("Hibernate SessionFactory создан успешно"); // логи лучше писать на английском
 
             } catch (Exception e) {
-                logger.error("Ошибка при создании SessionFactory", e);
-                throw new RuntimeException("Ошибка при создании SessionFactory", e);
+                logger.error("Ошибка при создании SessionFactory", e); // логи лучше писать на английском
+                throw new RuntimeException("Ошибка при создании SessionFactory", e); // в следующих модулях лучше сделать кастомные эксепшены
             }
         }
         return sessionFactory;

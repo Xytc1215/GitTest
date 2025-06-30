@@ -11,10 +11,12 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * Реализация DAO для работы с таблицей пользователей с помощью Hibernate.
- * Содержит CRUD-операции: создание/удаление таблицы, добавление/удаление пользователей,
+ * Класс, для работы с таблицей пользователей с помощью Hibernate.
+ * Выполняет создание/удаление таблицы, добавление/удаление пользователей,
  * получение всех пользователей и очистка таблицы.
  */
+
+// джава док в интерфейс. Пример рефакторинга смотри в соседнем классе
 public class UserDaoHibernateImpl implements UserDao {
 
     private static final Logger logger = LoggerFactory.getLogger(UserDaoHibernateImpl.class);

@@ -1,7 +1,6 @@
 package jm.task.core.jdbc.dao;
 
 import jm.task.core.jdbc.model.User;
-import jm.task.core.jdbc.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,100 +8,95 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static jm.task.core.jdbc.util.Util.getConnection;
+
 /**
- * Реализация DAO для работы с таблицей пользователей через JDBC.
- * Содержит методы создания/удаления таблицы, добавления/удаления пользователей,
- * получения всех пользователей и очистки таблицы.
+ * Что улучшилось:
+ *         - Централизованная обработка ошибок
+ *         - Метод executeStatement() - Дублирование statement.execute...
+ *         - Всегда выбрасывается RuntimeException - Неявное поведение при ошибке
+ *         - Логирование разрозненное	С единообразным форматом. На АНГЛИЙСКОМ, часто настроено так, что логи на русском будут отображаться каракулями.
+ *         - Все выражения вынесены в константы
+ *
+ */
+
+
+/**
+ * Класс, для управления пользователями через JDBC.
  */
 public class UserDaoJDBCImpl implements UserDao {
 
     private static final Logger logger = LoggerFactory.getLogger(UserDaoJDBCImpl.class);
 
+    private static final String CREATE_USERS_TABLE_SQL = "CREATE TABLE IF NOT EXISTS users (" +
+            "id BIGINT PRIMARY KEY AUTO_INCREMENT, " +
+            "name VARCHAR(50), " +
+            "lastName VARCHAR(50), " +
+            "age TINYINT)";
+
+    private static final String DROP_USERS_TABLE_SQL = "DROP TABLE IF EXISTS users";
+    private static final String INSERT_USER_SQL = "INSERT INTO users (name, lastName, age) VALUES (?, ?, ?)";
+    private static final String DELETE_USER_BY_ID_SQL = "DELETE FROM users WHERE id = ?";
+    private static final String SELECT_ALL_USERS_SQL = "SELECT * FROM users";
+    private static final String CLEAN_USERS_TABLE_SQL = "DELETE FROM users";
+
     public UserDaoJDBCImpl() {
     }
 
-    /**
-     * Создаёт таблицу пользователей, если её ещё нет.
-     */
     @Override
     public void createUsersTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS users (" +
-                "id BIGINT PRIMARY KEY AUTO_INCREMENT, " +
-                "name VARCHAR(50), " +
-                "lastName VARCHAR(50), " +
-                "age TINYINT)";
-        try (Connection connection = Util.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.executeUpdate(sql);
-            logger.info("Таблица users создана или уже существует.");
-        } catch (SQLException e) {
-            logger.error("Ошибка при создании таблицы users", e);
-        }
+        executeStatement(CREATE_USERS_TABLE_SQL, "Failed to create users table");
     }
 
-    /**
-     * Удаляет таблицу пользователей, если она существует.
-     */
     @Override
     public void dropUsersTable() {
-        String sql = "DROP TABLE IF EXISTS users";
-        try (Connection connection = Util.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.executeUpdate(sql);
-            logger.info("Таблица users удалена, если существовала.");
-        } catch (SQLException e) {
-            logger.error("Ошибка при удалении таблицы users", e);
-        }
+        executeStatement(DROP_USERS_TABLE_SQL, "Failed to drop users table");
     }
 
-    /**
-     * Сохраняет нового пользователя в таблицу.
-     */
     @Override
     public void saveUser(String name, String lastName, byte age) {
-        String sql = "INSERT INTO users (name, lastName, age) VALUES (?, ?, ?)";
-        try (Connection connection = Util.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USER_SQL)) {
+
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, lastName);
             preparedStatement.setByte(3, age);
             preparedStatement.executeUpdate();
-            logger.info("Пользователь с именем {} добавлен в базу.", name);
+
+            logger.info("User with name {} added to the database.", name);
+
         } catch (SQLException e) {
-            logger.error("Ошибка при сохранении пользователя", e);
+            handleSQLException("Failed to save user " + name, e);
         }
     }
 
-    /**
-     * Удаляет пользователя по его ID.
-     */
     @Override
     public void removeUserById(long id) {
-        String sql = "DELETE FROM users WHERE id = ?";
-        try (Connection connection = Util.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_USER_BY_ID_SQL)) {
+
             preparedStatement.setLong(1, id);
             int rowsDeleted = preparedStatement.executeUpdate();
+
             if (rowsDeleted > 0) {
-                logger.info("Пользователь с id={} удалён.", id);
+                logger.info("User with id={} has been deleted.", id);
             } else {
-                logger.warn("Пользователь с id={} не найден для удаления.", id);
+                logger.warn("User with id={} not found for deletion.", id);
             }
+
         } catch (SQLException e) {
-            logger.error("Ошибка при удалении пользователя с id=" + id, e);
+            handleSQLException("Failed to delete user with id=" + id, e);
         }
     }
 
-    /**
-     * Получает список всех пользователей из таблицы.
-     */
     @Override
     public List<User> getAllUsers() {
         List<User> userList = new ArrayList<>();
-        String sql = "SELECT * FROM users";
-        try (Connection connection = Util.getConnection();
+
+        try (Connection connection = getConnection();
              Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(sql)) {
+             ResultSet resultSet = statement.executeQuery(SELECT_ALL_USERS_SQL)) {
+
             while (resultSet.next()) {
                 User user = new User();
                 user.setId(resultSet.getLong("id"));
@@ -111,25 +105,41 @@ public class UserDaoJDBCImpl implements UserDao {
                 user.setAge(resultSet.getByte("age"));
                 userList.add(user);
             }
-            logger.info("Получен список всех пользователей. Количество: {}", userList.size());
+
+            logger.info("Retrieved {} users from the database.", userList.size());
+
         } catch (SQLException e) {
-            logger.error("Ошибка при получении списка пользователей", e);
+            handleSQLException("Failed to retrieve users", e);
         }
+
         return userList;
     }
 
-    /**
-     * Очищает таблицу пользователей (удаляет все записи).
-     */
     @Override
     public void cleanUsersTable() {
-        String sql = "DELETE FROM users";
-        try (Connection connection = Util.getConnection();
+        executeStatement(CLEAN_USERS_TABLE_SQL, "Failed to clean users table");
+    }
+
+    /**
+     * Выполняет простой SQL-запрос без параметров.
+     */
+    private void executeStatement(String sql, String errorMessage) {
+        try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
+
             statement.executeUpdate(sql);
-            logger.info("Таблица users очищена.");
+            logger.info("{} executed successfully.", sql);
+
         } catch (SQLException e) {
-            logger.error("Ошибка при очистке таблицы users", e);
+            handleSQLException(errorMessage, e);
         }
+    }
+
+    /**
+     * Централизованная обработка SQL-исключений.
+     */
+    private void handleSQLException(String message, SQLException e) {
+        logger.error(message, e);
+        throw new RuntimeException(message, e);
     }
 }
