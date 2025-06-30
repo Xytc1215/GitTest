@@ -23,6 +23,7 @@
     <dependencies>
 <!--         Ваши зависимости-->  // да ладно, наши?))
         <!-- https://mvnrepository.com/artifact/junit/junit -->  // шляпа
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
