@@ -33,6 +33,7 @@ public class UserDaoHibernateImpl implements UserDao {
         T execute(Session session);
     }
 
+
     /**
      * Универсальная обёртка для выполнения Hibernate-операций
      * с обработкой транзакций и логированием.
